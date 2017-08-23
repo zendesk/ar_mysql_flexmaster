@@ -2,5 +2,5 @@ source "https://rubygems.org"
 
 gemspec :path => "../"
 
-gem "rails", "~> 5.0.0"
-gem "mysql2"
+# Before https://github.com/rails/rails/commit/99c0cb58d189503da0f532c3e34bc0262cdff46c
+gem "rails", "~> 5.0.0", "< 5.0.1"
