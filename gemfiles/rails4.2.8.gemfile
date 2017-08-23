@@ -1,0 +1,6 @@
+source "https://rubygems.org"
+
+gemspec :path => "../"
+
+# Before https://github.com/rails/rails/commit/c6bf2b89471f14075d1de8f42b4c0eac9585ca98
+gem "rails", "~> 4.2.8"
