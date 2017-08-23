@@ -1,11 +1,11 @@
 # -*- encoding: utf-8 -*-
 
 Gem::Specification.new do |gem|
-  gem.authors       = ["Ben Osheroff"]
-  gem.email         = ["ben@zendesk.com"]
+  gem.authors       = ["Ben Osheroff", "Benjamin Quorning", "Gabe Martin-Dempesy", "Michael Grosser", "Pierre Schambacher"]
+  gem.email         = ["bquorning@zendesk.com", "gabe@zendesk.com", "mgrosser@zendesk.com", "pschambacher@zendesk.com"]
   gem.description   = %q{ar_mysql_flexmaster allows configuring N mysql servers in database.yml and auto-selects which is a master at runtime}
   gem.summary       = %q{select a master at runtime from a list}
-  gem.homepage      = "http://github.com/osheroff/ar_mysql_flexmaster"
+  gem.homepage      = "http://github.com/zendesk/ar_mysql_flexmaster"
 
   gem.files         = `git ls-files`.split($\)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }

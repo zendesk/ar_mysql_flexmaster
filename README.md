@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/osheroff/ar_mysql_flexmaster.svg?branch=master)](https://travis-ci.org/osheroff/ar_mysql_flexmaster)
+[![Build Status](https://travis-ci.org/zendesk/ar_mysql_flexmaster.svg?branch=master)](https://travis-ci.org/zendesk/ar_mysql_flexmaster)
 
 # Flexmaster
 
