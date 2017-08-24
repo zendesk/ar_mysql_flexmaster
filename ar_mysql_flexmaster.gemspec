@@ -14,6 +14,8 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.version       = "1.0.2"
 
+  gem.required_ruby_version = ">= 2.2"
+
   gem.add_runtime_dependency("mysql2")
   gem.add_runtime_dependency("activerecord")
   gem.add_runtime_dependency("activesupport")
