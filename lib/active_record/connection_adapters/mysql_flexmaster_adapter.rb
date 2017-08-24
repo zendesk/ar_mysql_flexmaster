@@ -41,7 +41,8 @@ module ActiveRecord
 
         connection = find_correct_host(@rw)
 
-        raise_no_server_available! unless connection
+        raise_no_server_available! if closed_connection?(connection)
+
         super(connection, logger, [], config)
       end
 
@@ -71,14 +72,14 @@ module ActiveRecord
       # after a cluster recovers from a bad state, an insert or SELECT will bring us back
       # into sanity, but sometimes would we never get there and would get stuck crashing in this function instead.
       def quote(*args)
-        if !@connection
+        if closed_connection?(@connection)
           soft_verify
         end
         super
       end
 
       def quote_string(*args)
-        if !@connection
+        if closed_connection?(@connection)
           soft_verify
         end
         super
@@ -108,7 +109,13 @@ module ActiveRecord
         rescue Mysql2::Error, ActiveRecord::StatementInvalid => e
           if retryable_error?(e) && !retried
             retried = true
-            @connection = nil
+
+            if ArMysqlFlexmaster::NULLABLE_CONNECTION
+              @connection = nil
+            else
+              @connection && @connection.close
+            end
+
             retry
           else
             raise e
@@ -134,7 +141,7 @@ module ActiveRecord
       # when either doing BEGIN or INSERT/UPDATE/DELETE etc, ensure a correct connection
       # and crash if wrong
       def hard_verify
-        if !@connection || !cx_correct?
+        if closed_connection?(@connection) || !cx_correct?
           refind_correct_host!
         end
       end
@@ -142,7 +149,7 @@ module ActiveRecord
       # on select statements, check every 10 statements to see if we need to switch hosts,
       # but don't crash if the cx is wrong, and don't sleep trying to find a correct one.
       def soft_verify
-        if !@connection
+        if closed_connection?(@connection)
           @connection = find_correct_host(@rw)
         else
           @select_counter += 1
@@ -154,7 +161,7 @@ module ActiveRecord
           end
         end
 
-        if @rw == :write && !@connection
+        if @rw == :write && closed_connection?(@connection)
           # desperation mode: we've been asked for the master, but it's just not available.
           # we'll go ahead and return a connection to the slave, understanding that it'll never work
           # for writes. (we'll call hard_verify and crash)
@@ -168,7 +175,7 @@ module ActiveRecord
 
       def connect
         @connection = find_correct_host(@rw)
-        raise_no_server_available! unless @connection
+        raise_no_server_available! if closed_connection?(@connection)
       end
 
       def raise_no_server_available!
@@ -196,7 +203,7 @@ module ActiveRecord
 
         loop do
           @connection = find_correct_host(@rw)
-          return if @connection
+          return if open_connection?(@connection)
 
           sleep(sleep_interval)
 
@@ -221,7 +228,12 @@ module ActiveRecord
 
         correct_cxs = cxs.select { |cx| cx_correct?(cx) }
 
-        chosen_cx = nil
+        if ArMysqlFlexmaster::NULLABLE_CONNECTION
+          chosen_cx = nil
+        else
+          chosen_cx && chosen_cx.close
+        end
+
         case rw
         when :write
           # for master connections, we make damn sure that we have just one master
@@ -235,7 +247,11 @@ module ActiveRecord
               collected_errors << NoActiveMasterException.new("no read-write servers found")
             end
 
-            chosen_cx = nil
+            if ArMysqlFlexmaster::NULLABLE_CONNECTION
+              chosen_cx = nil
+            else
+              chosen_cx && chosen_cx.close
+            end
           end
         when :read
           # for slave connections (or master-gone-away scenarios), we just return a random RO candidate or the master if none are available
@@ -276,6 +292,20 @@ module ActiveRecord
           res.first == 0
         else
           res.first == 1
+        end
+      end
+
+      def open_connection?(connection)
+        !closed_connection?(connection)
+      end
+
+      if ArMysqlFlexmaster::NULLABLE_CONNECTION
+        def closed_connection?(connection)
+          connection.nil?
+        end
+      else
+        def closed_connection?(connection)
+          connection.nil? || connection.closed?
         end
       end
     end
