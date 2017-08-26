@@ -25,5 +25,5 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency("mocha", "~> 1.1.0")
   gem.add_development_dependency("bump")
   gem.add_development_dependency("pry")
-  gem.add_development_dependency("mysql_isolated_server", "~> 0.5")
+  gem.add_development_dependency("isolated_server", "~> 0.4")
 end
