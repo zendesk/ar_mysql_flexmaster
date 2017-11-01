@@ -19,7 +19,7 @@ class WrongSetupTest < Minitest::Test
     puts "testing cutover with stopped slave"
     $mysql_master.connection.query("set GLOBAL READ_ONLY=0")
     $mysql_slave.connection.query("set GLOBAL READ_ONLY=1")
-    $mysql_slave.connection.query("slave stop")
+    $mysql_slave.connection.query("STOP SLAVE")
     assert_script_failed
   end
 end
