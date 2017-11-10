@@ -1,0 +1,29 @@
+# Ruby CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-ruby/ for more details
+#
+version: 2
+jobs:
+  build:
+    docker:
+      # Primary container image where all steps run.
+      - image: circleci/ruby:2.4.1
+
+      # Secondary containers
+      - image: circleci/mysql:5.7
+        name: flexmaster-master
+      - image: circleci/mysql:5.7
+        name: flexmaster-slave-1
+      - image: circleci/mysql:5.7
+        name: flexmaster-slave-2
+
+    steps:
+      - checkout
+
+      - run: bundle install --jobs=4 --path vendor/bundle
+
+      # Database setup
+      # - run: bundle exec rake db:create
+      # - run: bundle exec rake db:schema:load
+
+      - run: rake test
