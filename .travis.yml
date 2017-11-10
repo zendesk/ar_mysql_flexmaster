@@ -10,9 +10,12 @@ gemfile:
   - gemfiles/rails4.2.gemfile
   - gemfiles/rails5.0.gemfile
 
-sudo: false
+sudo: required
 
 bundler_args: --no-deployment
+
+before_script:
+  - sudo cp /usr/share/doc/mysql-server-5.6/examples/my-default.cnf /usr/share/mysql/my-default.cnf
 
 script: bundle exec rake test
 

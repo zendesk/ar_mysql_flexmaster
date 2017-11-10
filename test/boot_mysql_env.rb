@@ -1,25 +1,25 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require "mysql_isolated_server"
+require "isolated_server"
 
 threads = []
 threads << Thread.new do
-  $mysql_master = MysqlIsolatedServer.new(allow_output: false)
+  $mysql_master = IsolatedServer::Mysql.new(allow_output: false)
   $mysql_master.boot!
 
   puts "mysql master booted on port #{$mysql_master.port} -- access with mysql -uroot -h127.0.0.1 --port=#{$mysql_master.port} mysql"
 end
 
 threads << Thread.new do
-  $mysql_slave = MysqlIsolatedServer.new
+  $mysql_slave = IsolatedServer::Mysql.new
   $mysql_slave.boot!
 
   puts "mysql slave booted on port #{$mysql_slave.port} -- access with mysql -uroot -h127.0.0.1 --port=#{$mysql_slave.port} mysql"
 end
 
 threads << Thread.new do
-  $mysql_slave_2 = MysqlIsolatedServer.new
+  $mysql_slave_2 = IsolatedServer::Mysql.new
   $mysql_slave_2.boot!
 
   puts "mysql chained slave booted on port #{$mysql_slave_2.port} -- access with mysql -uroot -h127.0.0.1 --port=#{$mysql_slave_2.port} mysql"
