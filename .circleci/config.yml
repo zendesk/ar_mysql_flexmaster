@@ -6,17 +6,19 @@ version: 2
 jobs:
   build:
     docker:
+      # Primary container image where all steps run.
       - image: circleci/ruby:2.4.1
-        environment:
-          LOG_LEVEL: DEBUG
+
+      # Secondary containers
       - image: circleci/mysql:5.7
-        environment:
-          LOG_LEVEL: DEBUG
+        name: flexmaster-master
+      - image: circleci/mysql:5.7
+        name: flexmaster-slave-1
+      - image: circleci/mysql:5.7
+        name: flexmaster-slave-2
 
     steps:
       - checkout
-      - run: echo ‘/usr/lib/postgresql/9.6/bin/:$PATH’ >> $BASH_ENV
-
 
       - run: bundle install --jobs=4 --path vendor/bundle
 
@@ -24,6 +26,4 @@ jobs:
       # - run: bundle exec rake db:create
       # - run: bundle exec rake db:schema:load
 
-      - run: mysql --version
-      - run: mysqld --version
       - run: rake test
