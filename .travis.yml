@@ -10,7 +10,7 @@ gemfile:
   - gemfiles/rails4.2.gemfile
   - gemfiles/rails5.0.gemfile
 
-sudo: false
+sudo: true
 
 bundler_args: --no-deployment
 
