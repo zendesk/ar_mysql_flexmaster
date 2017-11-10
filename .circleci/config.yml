@@ -15,10 +15,15 @@ jobs:
 
     steps:
       - checkout
+      - run: echo ‘/usr/lib/postgresql/9.6/bin/:$PATH’ >> $BASH_ENV
+
+
       - run: bundle install --jobs=4 --path vendor/bundle
 
       # Database setup
       # - run: bundle exec rake db:create
       # - run: bundle exec rake db:schema:load
 
+      - run: mysql --version
+      - run: mysqld --version
       - run: rake test
