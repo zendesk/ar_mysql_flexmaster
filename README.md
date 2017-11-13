@@ -1,3 +1,23 @@
+Run tests with
+
+    docker-compose build && docker-compose up
+
+If you want to run the Ruby container alone, use
+
+    docker run --network armysqlflexmaster_flexmaster --volume \
+        <your ar_mysql_flexmaster folder>:/flexmaster/ -ti --rm \
+        <SHA returned by `docker build .`> bash
+
+
+
+
+
+
+
+
+
+
+
 [![Build Status](https://travis-ci.org/zendesk/ar_mysql_flexmaster.svg?branch=master)](https://travis-ci.org/zendesk/ar_mysql_flexmaster)
 
 # Flexmaster
