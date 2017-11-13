@@ -1,0 +1,24 @@
+common: &common
+  adapter: mysql_flexmaster
+  username: flex
+  hosts:
+    - dbs-1
+    - dbs-2
+    - dbs-3
+  database: flexmaster_test
+
+test:
+  <<: *common
+
+test_slave:
+  <<: *common
+  slave: true
+
+reconnect:
+  <<: *common
+  reconnect: true
+
+reconnect_slave:
+  <<: *common
+  reconnect: true
+  slave: true

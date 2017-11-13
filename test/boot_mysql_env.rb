@@ -1,51 +1,27 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require "isolated_server"
+require 'docker_server'
 
-threads = []
-threads << Thread.new do
-  $mysql_master = IsolatedServer::Mysql.new(allow_output: false)
-  $mysql_master.boot!
+$mysql_master  = DockerServer::MySql.new(host: "dbs-1")
+$mysql_slave   = DockerServer::MySql.new(host: "dbs-2")
+$mysql_slave_2 = DockerServer::MySql.new(host: "dbs-3")
 
-  puts "mysql master booted on port #{$mysql_master.port} -- access with mysql -uroot -h127.0.0.1 --port=#{$mysql_master.port} mysql"
-end
+sleep(2) until $mysql_master.up? && $mysql_slave.up? && $mysql_slave_2.up?
 
-threads << Thread.new do
-  $mysql_slave = IsolatedServer::Mysql.new
-  $mysql_slave.boot!
-
-  puts "mysql slave booted on port #{$mysql_slave.port} -- access with mysql -uroot -h127.0.0.1 --port=#{$mysql_slave.port} mysql"
-end
-
-threads << Thread.new do
-  $mysql_slave_2 = IsolatedServer::Mysql.new
-  $mysql_slave_2.boot!
-
-  puts "mysql chained slave booted on port #{$mysql_slave_2.port} -- access with mysql -uroot -h127.0.0.1 --port=#{$mysql_slave_2.port} mysql"
-end
-
-threads.each(&:join)
-
-$mysql_master.connection.query("CHANGE MASTER TO master_host='127.0.0.1', master_user='root', master_password=''")
+$mysql_master.make_master
 $mysql_slave.make_slave_of($mysql_master)
 $mysql_slave_2.make_slave_of($mysql_slave)
 
-$mysql_master.connection.query("GRANT ALL ON flexmaster_test.* to flex@localhost")
-$mysql_master.connection.query("CREATE DATABASE flexmaster_test")
-$mysql_master.connection.query("CREATE TABLE flexmaster_test.users (id INT(10) NOT NULL AUTO_INCREMENT PRIMARY KEY, name varchar(20))")
-$mysql_master.connection.query("INSERT INTO flexmaster_test.users set name='foo'")
-$mysql_slave.set_rw(false)
-$mysql_slave_2.set_rw(false)
+$mysql_master.query("CREATE DATABASE flexmaster_test")
+$mysql_master.query("CREATE TABLE flexmaster_test.users (" \
+                      "id INT(10) NOT NULL AUTO_INCREMENT PRIMARY KEY, " \
+                      "name VARCHAR(20)" \
+                    ")")
+$mysql_master.query("INSERT INTO flexmaster_test.users SET name='foo'")
 
-# let replication for the grants and such flow down.  bleh.
-repl_sync = false
-while !repl_sync
-  repl_sync = [[$mysql_master, $mysql_slave], [$mysql_slave, $mysql_slave_2]].all? do |master, slave|
-    master_pos = master.connection.query("show master status").to_a.first["Position"]
-    slave.connection.query("show slave status").to_a.first["Exec_Master_Log_Pos"] == master_pos
-  end
-  sleep 1
-end
+$mysql_master.query("CREATE USER flex")
+$mysql_master.query("GRANT ALL ON flexmaster_test.* TO flex")
 
-sleep if __FILE__ == $0
+sleep(0.5) until $mysql_slave.synced_with?($mysql_master) &&
+                 $mysql_slave_2.synced_with?($mysql_slave)
