@@ -4,17 +4,20 @@ require 'rake/testtask'
 require 'bump/tasks'
 require 'wwtd/tasks'
 
-Rake::TestTask.new(:test_units) do |test|
+Rake::TestTask.new(:unit_tests) do |test|
   test.libs << 'lib' << 'test'
   test.pattern = 'test/*_test.rb'
   test.verbose = true
 end
 
-task :test do
+task :integration_tests do
   retval = true
-  retval &= Rake::Task[:test_units].invoke
-  retval &= system(File.dirname(__FILE__) + "/test/integration/run_integration_tests")
+  Dir.glob(__dir__ + '/test/integration/*_test.rb').each do |f|
+    retval &= system("ruby #{f}")
+  end
   exit retval
 end
+
+task test: [:unit_tests, :integration_tests]
 
 task :default => 'wwtd:local'
