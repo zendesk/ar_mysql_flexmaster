@@ -20,8 +20,8 @@ $mysql_master.query("CREATE TABLE flexmaster_test.users (" \
                     ")")
 $mysql_master.query("INSERT INTO flexmaster_test.users SET name='foo'")
 
-$mysql_master.query("CREATE USER flex")
-$mysql_master.query("GRANT ALL ON flexmaster_test.* TO flex")
+$mysql_master.query("CREATE USER flex@'%'")
+$mysql_master.query("GRANT ALL ON flexmaster_test.* TO flex@'%'")
 
 sleep(0.5) until $mysql_slave.synced_with?($mysql_master) &&
                  $mysql_slave_2.synced_with?($mysql_slave)
