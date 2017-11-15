@@ -1,0 +1,17 @@
+version: "3"
+services:
+  dbs-1:
+    image: circleci/mysql:5.7
+    container_name: dbs-1
+    command: bash /entrypoint.sh mysqld --log-bin=mysql-bin --server-id=1000
+  dbs-2:
+    image: circleci/mysql:5.7
+    container_name: dbs-2
+    command: bash /entrypoint.sh mysqld --log-bin=mysql-bin --server-id=2000
+  dbs-3:
+    image: circleci/mysql:5.7
+    container_name: dbs-3
+    command: bash /entrypoint.sh mysqld --log-bin=mysql-bin --server-id=3000
+  ruby:
+    build: .
+    command: bundle exec rake test

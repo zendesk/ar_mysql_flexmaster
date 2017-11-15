@@ -12,33 +12,7 @@ end
 
 require_relative 'boot_mysql_env'
 
-File.open(File.dirname(File.expand_path(__FILE__)) + "/database.yml", "w+") do |f|
-  f.write <<-EOL
-common: &common
-  adapter: mysql_flexmaster
-  username: flex
-  hosts: ["127.0.0.1:#{$mysql_master.port}", "127.0.0.1:#{$mysql_slave.port}", "127.0.0.1:#{$mysql_slave_2.port}"]
-  database: flexmaster_test
-
-test:
-  <<: *common
-
-test_slave:
-  <<: *common
-  slave: true
-
-reconnect:
-  <<: *common
-  reconnect: true
-
-reconnect_slave:
-  <<: *common
-  reconnect: true
-  slave: true
-      EOL
-end
-
-ActiveRecord::Base.configurations = YAML.load(IO.read(File.dirname(__FILE__) + '/database.yml'))
+ActiveRecord::Base.configurations = YAML.load_file(__dir__ + '/database.yml')
 ActiveRecord::Base.establish_connection(:test)
 
 class User < ActiveRecord::Base
@@ -59,23 +33,18 @@ class ReconnectSlave < ActiveRecord::Base
   self.table_name = "users"
 end
 
-# $mysql_master and $mysql_slave are separate references to the master and slave that we
-# use to send control-channel commands on
-
-$original_master_port = $mysql_master.port
-
 class TestArFlexmaster < Minitest::Test
   def setup
     ActiveRecord::Base.establish_connection(:test)
 
-    $mysql_master.set_rw(true) if $mysql_master
-    $mysql_slave.set_rw(false) if $mysql_slave
-    $mysql_slave_2.set_rw(false) if $mysql_slave_2
+    $mysql_master.set_rw! if $mysql_master
+    $mysql_slave.set_ro! if $mysql_slave
+    $mysql_slave_2.set_ro! if $mysql_slave_2
   end
 
   def test_should_raise_without_a_rw_master
     [$mysql_master, $mysql_slave].each do |m|
-      m.set_rw(false)
+      m.set_ro!
     end
 
     e = assert_raises(ActiveRecord::ConnectionAdapters::MysqlFlexmasterAdapter::NoServerAvailableException) do
@@ -92,7 +61,7 @@ class TestArFlexmaster < Minitest::Test
   def test_should_hold_txs_until_timeout_then_abort
     ActiveRecord::Base.connection
 
-    $mysql_master.set_rw(false)
+    $mysql_master.set_ro!
     start_time = Time.now.to_i
     assert_raises(ActiveRecord::ConnectionAdapters::MysqlFlexmasterAdapter::NoServerAvailableException) do
       User.create(:name => "foo")
@@ -103,10 +72,10 @@ class TestArFlexmaster < Minitest::Test
 
   def test_should_hold_txs_and_then_continue
     ActiveRecord::Base.connection
-    $mysql_master.set_rw(false)
+    $mysql_master.set_ro!
     Thread.new do
       sleep 1
-      $mysql_slave.set_rw(true)
+      $mysql_slave.set_rw!
     end
     User.create(:name => "foo")
     assert_equal $mysql_slave, master_connection
@@ -119,10 +88,10 @@ class TestArFlexmaster < Minitest::Test
 
   def test_should_hold_implicit_txs_and_then_continue
     User.create!(:name => "foo")
-    $mysql_master.set_rw(false)
+    $mysql_master.set_ro!
     Thread.new do
       sleep 1
-      $mysql_slave.set_rw(true)
+      $mysql_slave.set_rw!
     end
     User.update_all(:name => "bar")
 
@@ -133,7 +102,7 @@ class TestArFlexmaster < Minitest::Test
 
   def test_should_let_in_flight_txs_crash
     User.transaction do
-      $mysql_master.set_rw(false)
+      $mysql_master.set_ro!
       assert_raises(ActiveRecord::StatementInvalid) do
         User.update_all(:name => "bar")
       end
@@ -142,8 +111,8 @@ class TestArFlexmaster < Minitest::Test
 
   def test_should_eventually_pick_up_new_master_on_selects
     ActiveRecord::Base.connection
-    $mysql_master.set_rw(false)
-    $mysql_slave.set_rw(true)
+    $mysql_master.set_ro!
+    $mysql_slave.set_rw!
     assert_equal $mysql_master, master_connection
     100.times do
       User.first
@@ -155,25 +124,25 @@ class TestArFlexmaster < Minitest::Test
   # Allow side-effect free statements to continue.
   def test_should_not_crash_selects_in_the_double_read_only_window
     ActiveRecord::Base.connection
-    $mysql_master.set_rw(false)
-    $mysql_slave.set_rw(false)
+    $mysql_master.set_ro!
+    $mysql_slave.set_ro!
     assert_equal $mysql_master, master_connection
     100.times do
       User.first
     end
   end
 
-  def test_should_expose_the_current_master_and_port
+  def test_should_expose_the_current_master_and_server_id
     cx = ActiveRecord::Base.connection
-    assert_equal "127.0.0.1", cx.current_host
-    assert_equal $mysql_master.port, cx.current_port
+    assert_equal "dbs-1", cx.current_host
+    assert_equal $mysql_master.server_id, server_id(cx)
   end
 
   def test_should_move_off_the_slave_after_it_becomes_master
     UserSlave.first
     User.create!
-    $mysql_master.set_rw(false)
-    $mysql_slave.set_rw(true)
+    $mysql_master.set_ro!
+    $mysql_slave.set_rw!
 
     20.times do
       UserSlave.connection.execute("select 1")
@@ -248,7 +217,7 @@ class TestArFlexmaster < Minitest::Test
     # bad state again.
 
     # now a dba or someone comes along and flips the read-only bit on the slave
-    $mysql_slave.set_rw(true)
+    $mysql_slave.set_rw!
     User.create!
     UserSlave.first
 
@@ -270,7 +239,7 @@ class TestArFlexmaster < Minitest::Test
       Reconnect.create!
     end
 
-    $mysql_slave.set_rw(true)
+    $mysql_slave.set_rw!
     Reconnect.create!
     ReconnectSlave.first
   ensure
@@ -307,18 +276,17 @@ class TestArFlexmaster < Minitest::Test
 
   private
 
-  def port_for_class(klass)
-    klass.connection.execute("show global variables like 'port'").first.last.to_i
+  def server_id(connection)
+    connection.execute("SHOW GLOBAL VARIABLES LIKE 'server_id'").first.last.to_i
   end
 
-  def main_connection_is_original_master?
-    port = port_for_class(ActiveRecord::Base)
-    port == $original_master_port
+  def server_id_for_class(klass)
+    server_id(klass.connection)
   end
 
   def connection_for_class(klass)
-    port = port_for_class(klass)
-    [$mysql_master, $mysql_slave, $mysql_slave_2].find { |cx| cx.port == port }
+    server_id = server_id_for_class(klass)
+    [$mysql_master, $mysql_slave, $mysql_slave_2].find { |cx| cx.server_id == server_id }
   end
 
   def master_connection
