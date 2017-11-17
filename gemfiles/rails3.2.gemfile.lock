@@ -1,7 +1,7 @@
 PATH
   remote: ..
   specs:
-    ar_mysql_flexmaster (1.0.2)
+    ar_mysql_flexmaster (1.0.3)
       activerecord
       activesupport
       mysql2
@@ -107,6 +107,7 @@ PLATFORMS
 DEPENDENCIES
   ar_mysql_flexmaster!
   bump
+  bundler
   isolated_server
   minitest
   mocha (~> 1.1.0)
@@ -117,4 +118,4 @@ DEPENDENCIES
   wwtd
 
 BUNDLED WITH
-   1.15.4
+   1.16.0
