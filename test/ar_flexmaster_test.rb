@@ -1,14 +1,18 @@
 # frozen_string_literal: true
 require 'bundler/setup'
 require 'ar_mysql_flexmaster'
+require 'active_support'
 require 'active_record'
 require 'minitest/autorun'
+require "minitest/reporters"
 require 'mocha/mini_test'
 require 'logger'
 
 if !defined?(Minitest::Test)
   Minitest::Test = MiniTest::Unit::TestCase
 end
+
+Minitest::Reporters.use!(Minitest::Reporters::SpecReporter.new(color: true))
 
 require_relative 'boot_mysql_env'
 
