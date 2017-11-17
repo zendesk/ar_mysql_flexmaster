@@ -222,7 +222,7 @@ class TestArFlexmaster < Minitest::Test
       User.create!
     end
 
-    assert_equal nil, User.connection.instance_variable_get("@connection")
+    assert_nil User.connection.instance_variable_get("@connection")
 
     # this proxies to @connection and has been the cause of some crashes
     assert User.connection.quote("foo")
