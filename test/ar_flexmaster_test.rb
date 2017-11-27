@@ -1,14 +1,18 @@
 # frozen_string_literal: true
 require 'bundler/setup'
 require 'ar_mysql_flexmaster'
+require 'active_support'
 require 'active_record'
 require 'minitest/autorun'
+require "minitest/reporters"
 require 'mocha/mini_test'
 require 'logger'
 
 if !defined?(Minitest::Test)
   Minitest::Test = MiniTest::Unit::TestCase
 end
+
+Minitest::Reporters.use!(Minitest::Reporters::SpecReporter.new(color: true))
 
 require_relative 'boot_mysql_env'
 
@@ -222,7 +226,7 @@ class TestArFlexmaster < Minitest::Test
       User.create!
     end
 
-    assert_equal nil, User.connection.instance_variable_get("@connection")
+    assert_nil User.connection.instance_variable_get("@connection")
 
     # this proxies to @connection and has been the cause of some crashes
     assert User.connection.quote("foo")

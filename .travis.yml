@@ -1,9 +1,12 @@
 language: ruby
+cache: bundler
+branches:
+  only: master
 
 rvm:
-  - 2.2.6
-  - 2.3.3
-  - 2.4.1
+  - 2.2
+  - 2.3
+  - 2.4
 
 gemfile:
   - gemfiles/rails3.2.gemfile
@@ -21,5 +24,5 @@ script: bundle exec rake test
 
 matrix:
   exclude:
-    - rvm: 2.4.1
+    - rvm: 2.4
       gemfile: gemfiles/rails3.2.gemfile
