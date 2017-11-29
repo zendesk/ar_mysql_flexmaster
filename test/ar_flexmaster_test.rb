@@ -211,7 +211,12 @@ class TestArFlexmaster < Minitest::Test
 
   def test_recovering_after_losing_connection_to_the_master
     User.create!
-    assert User.connection.instance_variable_get("@connection")
+
+    if ArMysqlFlexmaster::NULLABLE_CONNECTION
+      assert User.connection.instance_variable_get("@connection")
+    else
+      assert !User.connection.instance_variable_get("@connection").closed?
+    end
 
     $mysql_master.down!
     # trying to do an INSERT with the master down puts is into a precious state --
@@ -226,7 +231,11 @@ class TestArFlexmaster < Minitest::Test
       User.create!
     end
 
-    assert_nil User.connection.instance_variable_get("@connection")
+    if ArMysqlFlexmaster::NULLABLE_CONNECTION
+      assert_nil User.connection.instance_variable_get("@connection")
+    else
+      assert User.connection.instance_variable_get("@connection").closed?
+    end
 
     # this proxies to @connection and has been the cause of some crashes
     assert User.connection.quote("foo")
@@ -236,8 +245,14 @@ class TestArFlexmaster < Minitest::Test
 
   def test_quote_string_should_recover_connection
     User.create!
-    assert User.connection.instance_variable_get("@connection")
-    User.connection.instance_variable_set("@connection", nil)
+
+    if ArMysqlFlexmaster::NULLABLE_CONNECTION
+      assert User.connection.instance_variable_get("@connection")
+      User.connection.instance_variable_set("@connection", nil)
+    else
+      assert !User.connection.instance_variable_get("@connection").closed?
+      User.connection.instance_variable_get("@connection").close
+    end
 
     assert User.connection.quote_string("foo")
   end

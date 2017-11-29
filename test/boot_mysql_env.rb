@@ -31,6 +31,7 @@ $mysql_master.connection.query("CHANGE MASTER TO master_host='127.0.0.1', master
 $mysql_slave.make_slave_of($mysql_master)
 $mysql_slave_2.make_slave_of($mysql_slave)
 
+$mysql_master.connection.query("CREATE USER flex@localhost")
 $mysql_master.connection.query("GRANT ALL ON flexmaster_test.* to flex@localhost")
 $mysql_master.connection.query("CREATE DATABASE flexmaster_test")
 $mysql_master.connection.query("CREATE TABLE flexmaster_test.users (id INT(10) NOT NULL AUTO_INCREMENT PRIMARY KEY, name varchar(20))")
