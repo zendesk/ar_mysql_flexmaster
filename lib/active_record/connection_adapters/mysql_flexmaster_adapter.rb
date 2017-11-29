@@ -150,7 +150,8 @@ module ActiveRecord
       # but don't crash if the cx is wrong, and don't sleep trying to find a correct one.
       def soft_verify
         if closed_connection?(@connection)
-          @connection = find_correct_host(@rw)
+          found = find_correct_host(@rw)
+          @connection = found if found || ArMysqlFlexmaster::NULLABLE_CONNECTION
         else
           @select_counter += 1
           return unless @select_counter % CHECK_EVERY_N_SELECTS == 0
@@ -165,7 +166,8 @@ module ActiveRecord
           # desperation mode: we've been asked for the master, but it's just not available.
           # we'll go ahead and return a connection to the slave, understanding that it'll never work
           # for writes. (we'll call hard_verify and crash)
-          @connection = find_correct_host(:read)
+          found = find_correct_host(:read)
+          @connection = found if !ArMysqlFlexmaster::NULLABLE_CONNECTION || found
         end
       end
 
