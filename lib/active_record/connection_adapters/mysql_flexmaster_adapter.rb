@@ -201,9 +201,12 @@ module ActiveRecord
         sleep_interval = 0.1
         timeout_at = Time.now.to_f + @tx_hold_timeout
 
+        old = @connection
+
         loop do
-          @connection = find_correct_host(@rw)
-          return if open_connection?(@connection)
+          correct_connection = find_correct_host(@rw)
+          @connection = correct_connection if ArMysqlFlexmaster::NULLABLE_CONNECTION || correct_connection
+          return if open_connection?(correct_connection)
 
           sleep(sleep_interval)
 
@@ -228,12 +231,6 @@ module ActiveRecord
 
         correct_cxs = cxs.select { |cx| cx_correct?(cx) }
 
-        if ArMysqlFlexmaster::NULLABLE_CONNECTION
-          chosen_cx = nil
-        else
-          chosen_cx && chosen_cx.close
-        end
-
         case rw
         when :write
           # for master connections, we make damn sure that we have just one master
@@ -246,12 +243,7 @@ module ActiveRecord
             else
               collected_errors << NoActiveMasterException.new("no read-write servers found")
             end
-
-            if ArMysqlFlexmaster::NULLABLE_CONNECTION
-              chosen_cx = nil
-            else
-              chosen_cx && chosen_cx.close
-            end
+            chosen_cx = nil
           end
         when :read
           # for slave connections (or master-gone-away scenarios), we just return a random RO candidate or the master if none are available
@@ -261,7 +253,8 @@ module ActiveRecord
             chosen_cx = correct_cxs.shuffle.first
           end
         end
-        cxs.each { |cx| cx.close unless chosen_cx == cx }
+
+        cxs.each { |cx| cx.close unless chosen_cx == cx } if chosen_cx
         chosen_cx
       end
 
