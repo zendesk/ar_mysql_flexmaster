@@ -1,7 +1,8 @@
 # frozen_string_literal: true
-require 'active_record'
-require 'active_record/connection_adapters/mysql2_adapter'
-require 'timeout'
+
+require "active_record"
+require "active_record/connection_adapters/mysql2_adapter"
+require "timeout"
 
 module ActiveRecord
   class Base
@@ -9,8 +10,8 @@ module ActiveRecord
       config = config.symbolize_keys
 
       # fallback to :host or :localhost
-      config[:hosts] ||= config.key?(:host) ? [config[:host]] : ['localhost']
-      config[:username] = 'root' if config[:username].nil?
+      config[:hosts] ||= config.key?(:host) ? [config[:host]] : ["localhost"]
+      config[:username] = "root" if config[:username].nil?
 
       if Mysql2::Client.const_defined? :FOUND_ROWS
         config[:flags] = Mysql2::Client::FOUND_ROWS
@@ -118,7 +119,7 @@ module ActiveRecord
 
       AR_MESSAGES = [/^Mysql2::Error: MySQL server has gone away/,
                      /^Mysql2::Error: Lost connection to MySQL server during query/,
-                     /^Mysql2::Error: Can't connect to MySQL server/]
+                     /^Mysql2::Error: Can't connect to MySQL server/].freeze
       def retryable_error?(e)
         case e
         when Mysql2::Error
@@ -208,7 +209,7 @@ module ActiveRecord
 
       def hosts_and_ports
         @hosts_and_ports ||= @config[:hosts].map do |hoststr|
-          host, port = hoststr.split(':')
+          host, port = hoststr.split(":")
           port = port.to_i unless port.nil?
           [host, port]
         end
@@ -242,7 +243,7 @@ module ActiveRecord
           if correct_cxs.empty?
             chosen_cx = cxs.first
           else
-            chosen_cx = correct_cxs.shuffle.first
+            chosen_cx = correct_cxs.sample
           end
         end
         cxs.each { |cx| cx.close unless chosen_cx == cx }
@@ -253,9 +254,9 @@ module ActiveRecord
         attempts = 1
         begin
           Timeout.timeout(@connection_timeout) do
-            cfg = @config.merge(:host => host, :port => port)
+            cfg = @config.merge(host: host, port: port)
             Mysql2::Client.new(cfg).tap do |cx|
-              cx.query_options.merge!(:as => :array)
+              cx.query_options.merge!(as: :array)
             end
           end
         rescue Mysql2::Error, Timeout::Error => e

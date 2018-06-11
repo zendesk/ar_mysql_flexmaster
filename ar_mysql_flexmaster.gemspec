@@ -1,5 +1,3 @@
-# -*- encoding: utf-8 -*-
-
 Gem::Specification.new do |gem|
   gem.authors       = ["Ben Osheroff", "Benjamin Quorning", "Gabe Martin-Dempesy", "Michael Grosser", "Pierre Schambacher"]
   gem.email         = ["bquorning@zendesk.com", "gabe@zendesk.com", "mgrosser@zendesk.com", "pschambacher@zendesk.com"]
@@ -16,16 +14,18 @@ Gem::Specification.new do |gem|
 
   gem.required_ruby_version = ">= 2.2"
 
-  gem.add_runtime_dependency("mysql2")
   gem.add_runtime_dependency("activerecord")
   gem.add_runtime_dependency("activesupport")
+  gem.add_runtime_dependency("mysql2")
+
+  gem.add_development_dependency("bump")
   gem.add_development_dependency("bundler")
-  gem.add_development_dependency("rake")
-  gem.add_development_dependency("wwtd")
+  gem.add_development_dependency("isolated_server")
   gem.add_development_dependency("minitest")
   gem.add_development_dependency("minitest-reporters")
   gem.add_development_dependency("mocha", "~> 1.1.0")
-  gem.add_development_dependency("bump")
   gem.add_development_dependency("pry")
-  gem.add_development_dependency("isolated_server")
+  gem.add_development_dependency("rake")
+  gem.add_development_dependency("rubocop", "0.57.1")
+  gem.add_development_dependency("wwtd")
 end
