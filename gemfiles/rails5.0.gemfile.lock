@@ -48,6 +48,7 @@ GEM
       tzinfo (~> 1.1)
     ansi (1.5.0)
     arel (7.1.4)
+    ast (2.4.0)
     builder (3.2.3)
     bump (0.5.4)
     coderay (1.1.1)
@@ -57,6 +58,7 @@ GEM
       activesupport (>= 4.2.0)
     i18n (0.8.6)
     isolated_server (0.4.12)
+    jaro_winkler (1.5.1)
     loofah (2.0.3)
       nokogiri (>= 1.5.9)
     mail (2.6.6)
@@ -79,6 +81,10 @@ GEM
     nio4r (1.2.1)
     nokogiri (1.8.0)
       mini_portile2 (~> 2.2.0)
+    parallel (1.12.1)
+    parser (2.5.1.0)
+      ast (~> 2.4.0)
+    powerpack (0.1.2)
     pry (0.10.4)
       coderay (~> 1.1.0)
       method_source (~> 0.8.1)
@@ -109,7 +115,16 @@ GEM
       method_source
       rake (>= 0.8.7)
       thor (>= 0.18.1, < 2.0)
+    rainbow (3.0.0)
     rake (12.0.0)
+    rubocop (0.57.1)
+      jaro_winkler (~> 1.5.1)
+      parallel (~> 1.10)
+      parser (>= 2.5)
+      powerpack (~> 0.1)
+      rainbow (>= 2.2.2, < 4.0)
+      ruby-progressbar (~> 1.7)
+      unicode-display_width (~> 1.0, >= 1.0.1)
     ruby-progressbar (1.9.0)
     slop (3.6.0)
     sprockets (3.7.1)
@@ -123,6 +138,7 @@ GEM
     thread_safe (0.3.6)
     tzinfo (1.2.3)
       thread_safe (~> 0.1)
+    unicode-display_width (1.4.0)
     websocket-driver (0.6.5)
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.2)
@@ -142,7 +158,8 @@ DEPENDENCIES
   pry
   rails (~> 5.0.0, < 5.0.1)
   rake
+  rubocop (= 0.57.1)
   wwtd
 
 BUNDLED WITH
-   1.16.0
+   1.16.2

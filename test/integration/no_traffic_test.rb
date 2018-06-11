@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require_relative "../integration_helper"
 
 class NoTrafficTest < Minitest::Test
@@ -9,7 +10,7 @@ class NoTrafficTest < Minitest::Test
     puts "testing basic cutover..."
 
     system "#{master_cut_script} 127.0.0.1:#{$mysql_master.port} 127.0.0.1:#{$mysql_slave.port} root -p ''"
-    assert_ro($mysql_master.connection, 'master', true)
-    assert_ro($mysql_slave.connection, 'master', false)
+    assert_ro($mysql_master.connection, "master", true)
+    assert_ro($mysql_slave.connection, "master", false)
   end
 end

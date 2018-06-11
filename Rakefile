@@ -1,12 +1,12 @@
-require 'bundler/gem_tasks'
-require 'rake/testtask'
+require "bundler/gem_tasks"
+require "rake/testtask"
 
-require 'bump/tasks'
-require 'wwtd/tasks'
+require "bump/tasks"
+require "wwtd/tasks"
 
 Rake::TestTask.new(:test_units) do |test|
-  test.libs << 'lib' << 'test'
-  test.pattern = 'test/*_test.rb'
+  test.libs << "lib" << "test"
+  test.pattern = "test/*_test.rb"
   test.verbose = true
 end
 
@@ -17,4 +17,4 @@ task :test do
   exit retval
 end
 
-task :default => 'wwtd:local'
+task default: "wwtd:local"

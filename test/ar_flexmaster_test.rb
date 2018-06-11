@@ -1,12 +1,13 @@
 # frozen_string_literal: true
-require 'bundler/setup'
-require 'ar_mysql_flexmaster'
-require 'active_support'
-require 'active_record'
-require 'minitest/autorun'
+
+require "bundler/setup"
+require "ar_mysql_flexmaster"
+require "active_support"
+require "active_record"
+require "minitest/autorun"
 require "minitest/reporters"
-require 'mocha/mini_test'
-require 'logger'
+require "mocha/mini_test"
+require "logger"
 
 if !defined?(Minitest::Test)
   Minitest::Test = MiniTest::Unit::TestCase
@@ -14,35 +15,35 @@ end
 
 Minitest::Reporters.use!(Minitest::Reporters::SpecReporter.new(color: true))
 
-require_relative 'boot_mysql_env'
+require_relative "boot_mysql_env"
 
 File.open(File.dirname(File.expand_path(__FILE__)) + "/database.yml", "w+") do |f|
-  f.write <<-EOL
-common: &common
-  adapter: mysql_flexmaster
-  username: flex
-  hosts: ["127.0.0.1:#{$mysql_master.port}", "127.0.0.1:#{$mysql_slave.port}", "127.0.0.1:#{$mysql_slave_2.port}"]
-  database: flexmaster_test
+  f.write <<-YAML.strip_heredoc
+    common: &common
+      adapter: mysql_flexmaster
+      username: flex
+      hosts: ["127.0.0.1:#{$mysql_master.port}", "127.0.0.1:#{$mysql_slave.port}", "127.0.0.1:#{$mysql_slave_2.port}"]
+      database: flexmaster_test
 
-test:
-  <<: *common
+    test:
+      <<: *common
 
-test_slave:
-  <<: *common
-  slave: true
+    test_slave:
+      <<: *common
+      slave: true
 
-reconnect:
-  <<: *common
-  reconnect: true
+    reconnect:
+      <<: *common
+      reconnect: true
 
-reconnect_slave:
-  <<: *common
-  reconnect: true
-  slave: true
-      EOL
+    reconnect_slave:
+      <<: *common
+      reconnect: true
+      slave: true
+  YAML
 end
 
-ActiveRecord::Base.configurations = YAML.load(IO.read(File.dirname(__FILE__) + '/database.yml'))
+ActiveRecord::Base.configurations = YAML.load(IO.read(File.dirname(__FILE__) + "/database.yml"))
 ActiveRecord::Base.establish_connection(:test)
 
 class User < ActiveRecord::Base
@@ -99,7 +100,7 @@ class TestArFlexmaster < Minitest::Test
     $mysql_master.set_rw(false)
     start_time = Time.now.to_i
     assert_raises(ActiveRecord::ConnectionAdapters::MysqlFlexmasterAdapter::NoServerAvailableException) do
-      User.create(:name => "foo")
+      User.create(name: "foo")
     end
     end_time = Time.now.to_i
     assert end_time - start_time >= 5
@@ -112,23 +113,23 @@ class TestArFlexmaster < Minitest::Test
       sleep 1
       $mysql_slave.set_rw(true)
     end
-    User.create(:name => "foo")
+    User.create(name: "foo")
     assert_equal $mysql_slave, master_connection
     if ActiveRecord::VERSION::MAJOR >= 4
-      assert User.where(:name => "foo").exists?
+      assert User.where(name: "foo").exists?
     else
-      assert User.first(:conditions => { :name => "foo" })
+      assert User.first(conditions: { name: "foo" })
     end
   end
 
   def test_should_hold_implicit_txs_and_then_continue
-    User.create!(:name => "foo")
+    User.create!(name: "foo")
     $mysql_master.set_rw(false)
     Thread.new do
       sleep 1
       $mysql_slave.set_rw(true)
     end
-    User.update_all(:name => "bar")
+    User.update_all(name: "bar")
 
     assert_equal $mysql_slave, master_connection
 
@@ -139,7 +140,7 @@ class TestArFlexmaster < Minitest::Test
     User.transaction do
       $mysql_master.set_rw(false)
       assert_raises(ActiveRecord::StatementInvalid) do
-        User.update_all(:name => "bar")
+        User.update_all(name: "bar")
       end
     end
   end
@@ -187,7 +188,7 @@ class TestArFlexmaster < Minitest::Test
   end
 
   def test_xxx_non_responsive_master
-    return if ENV['TRAVIS'] # something different about 127.0.0.2 in travis, I guess.
+    return if ENV["TRAVIS"] # something different about 127.0.0.2 in travis, I guess.
     ActiveRecord::Base.configurations["test"]["hosts"] << "127.0.0.2:1235"
     start_time = Time.now.to_i
     User.connection.reconnect!
@@ -296,8 +297,8 @@ class TestArFlexmaster < Minitest::Test
   def test_connection_multiple_attempts
     # We're simulating connection timeout, so mocha's Expectation#times doesn't register the calls
     attempts = 0
-    null_logger = Logger.new('/dev/null')
-    config = { hosts: ['localhost'], connection_timeout: 0.01, connection_attempts: 5 }
+    null_logger = Logger.new("/dev/null")
+    config = { hosts: ["localhost"], connection_timeout: 0.01, connection_attempts: 5 }
 
     Mysql2::Client.stubs(:new).with do
       attempts += 1

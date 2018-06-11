@@ -1,0 +1,16 @@
+inherit_from: .rubocop_todo.yml
+
+AllCops:
+  TargetRubyVersion: 2.2
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/GuardClause:
+  Enabled: false
+Style/IfUnlessModifier:
+  Enabled: false
+Style/NegatedIf:
+  Enabled: false
+Style/NumericPredicate:
+  Enabled: false

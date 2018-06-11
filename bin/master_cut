@@ -1,9 +1,9 @@
 #!/usr/bin/env ruby
 
-require 'bundler/setup'
-require 'mysql2'
-require 'socket'
-require 'pp'
+require "bundler/setup"
+require "mysql2"
+require "socket"
+require "pp"
 require "getoptlong"
 
 Thread.abort_on_exception = false
@@ -16,11 +16,11 @@ opts = GetoptLong.new(
 
 opts.each do |opt, arg|
   case opt
-  when '--password'
+  when "--password"
     $password = arg
-  when '--rehome-master'
+  when "--rehome-master"
     $rehome_master = true
-  when '--start-slave'
+  when "--start-slave"
     $start_slave = true
     $rehome_master = true
   end
@@ -42,7 +42,7 @@ end
 def open_cx(host)
   host, port = host.split(":")
   port = port.to_i if port
-  Mysql2::Client.new(:host => host, :username => $username, :password => $password, :port => port)
+  Mysql2::Client.new(host: host, username: $username, password: $password, port: port)
 end
 
 def set_rw(cx)
@@ -74,25 +74,25 @@ end
 
 def preflight_check
   cx = open_cx($old_master)
-  rw = cx.query("select @@read_only as read_only").first['read_only']
+  rw = cx.query("select @@read_only as read_only").first["read_only"]
   fail("old-master #{$old_master} is read-only!") if rw != 0
 
   slave_cx = open_cx($new_master)
-  rw = slave_cx.query("select @@read_only as read_only").first['read_only']
+  rw = slave_cx.query("select @@read_only as read_only").first["read_only"]
   fail("new-master #{$old_master} is read-write!") if rw != 1
 
   slave_info = slave_cx.query("show slave status").first
   fail("no slave configured!") if slave_info.nil?
-  fail("slave is stopped!") unless slave_info['Slave_IO_Running'] == 'Yes' && slave_info['Slave_SQL_Running'] == 'Yes'
-  fail("slave is delayed") if slave_info['Seconds_Behind_Master'].nil? || slave_info['Seconds_Behind_Master'] > 0
+  fail("slave is stopped!") unless slave_info["Slave_IO_Running"] == "Yes" && slave_info["Slave_SQL_Running"] == "Yes"
+  fail("slave is delayed") if slave_info["Seconds_Behind_Master"].nil? || slave_info["Seconds_Behind_Master"] > 0
 
   masters_slave_info = cx.query("show slave status").first
-  if $rehome_master && (masters_slave_info.nil? || masters_slave_info['Master_User'] == 'test')
+  if $rehome_master && (masters_slave_info.nil? || masters_slave_info["Master_User"] == "test")
     fail("I can't rehome the original master -- it has no slave user or password.")
   end
 
-  master_ip, slave_master_ip = [$old_master, slave_info['Master_Host']].map do |h|
-    h = h.split(':').first
+  master_ip, slave_master_ip = [$old_master, slave_info["Master_Host"]].map do |h|
+    h = h.split(":").first
     Socket.gethostbyname(h)[3].unpack("CCCC")
   end
 
@@ -105,14 +105,14 @@ def process_kill_thread
   Thread.new do
     cx = open_cx($old_master)
     sleep 5
-    while !$swapped_ok
-      my_id = cx.query("SELECT CONNECTION_ID() as id").first['id']
+    until $swapped_ok
+      my_id = cx.query("SELECT CONNECTION_ID() as id").first["id"]
       processlist = cx.query("show processlist")
       processlist.each do |process|
-        next if process['Info'] =~ /SET GLOBAL READ_ONLY/
-        next if process['Id'].to_i == my_id.to_i
+        next if process["Info"] =~ /SET GLOBAL READ_ONLY/
+        next if process["Id"].to_i == my_id.to_i
         puts "killing #{process}"
-        kill_query!(cx, process['Id'])
+        kill_query!(cx, process["Id"])
       end
       sleep 0.1
     end
@@ -123,7 +123,7 @@ def wait_for_slave_catchup(master, slave)
   loop do
     master_info = master.query("show master status").first
     slave_info = slave.query("show slave status").first
-    break if master_info['Position'] <= slave_info['Exec_Master_Log_Pos']
+    break if master_info["Position"] <= slave_info["Exec_Master_Log_Pos"]
   end
 end
 
